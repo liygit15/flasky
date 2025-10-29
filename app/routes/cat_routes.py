@@ -1,4 +1,4 @@
-from flask import abort, Blueprint, make_response,request
+from flask import abort, Blueprint, make_response,request,Response
 from ..models.cat import Cat
 from ..db import db
 
@@ -30,6 +30,7 @@ def create_cat():
     
     return cat_response, 201
 
+
 @cats_bp.get("")
 def get_all_cats():
     query = db.select(Cat).order_by(Cat.id)
@@ -47,62 +48,91 @@ def get_all_cats():
     return result_list
 
 
-# #/cats/1  /cats/potato
-# @cats_bp.get("/<id>")
-# def get_single_cat(id):
-#     # id = int(id)
+#/cats/1  /cats/potato
+@cats_bp.get("/<id>")
+def get_single_cat(id):
 
-#     cat = validate_cat(id) # 不需要存入一个东西里面
+    # query = db.select(Cat).where(Cat.id == id)
+    # cat = db.session.scalar(query)
+    cat = validate_cat(id)
     
-#     cat_dict = dict(
-#             id = cat.id,
-#             name=cat.name,
-#             color=cat.color,
-#             personality=cat.personality
-#         )
+    cat_dict = dict(
+            id = cat.id,
+            name=cat.name,
+            color=cat.color,
+            personality=cat.personality
+        )
     
-#     return cat_dict
-#     # for cat in cats:
-#     #     if cat.id == id:
-#     #         return dict(
-#     #         id = cat.id,
-#     #         name=cat.name,
-#     #         color=cat.color,
-#     #         personality=cat.personality
-#     #     )
-#             # wsm return cat不对？
+    return cat_dict
 
-#     # return result
+    # for cat in cats:
+    #     if cat.id == id:
+    #         return dict(
+    #         id = cat.id,
+    #         name=cat.name,
+    #         color=cat.color,
+    #         personality=cat.personality
+    #     )
+
+    # return result
+
+
 # # 构建helper function，提高resuability。因为不止会get，还有patch，delet，都需要一个有效输入。
 # # 所以可以这样提取出来备用
 
-# def validate_cat(id):
-#     try:
-#         id = int(id)
-#     except ValueError: # 这里需要valueerror吗？因为这里是only可以得到的error，所以不太需要这个valueerror
-#         invalid = {"message": f"Cat id {id} is invalid."}
+def validate_cat(id):
+    try:
+        id = int(id)
+    except ValueError: # 这里需要valueerror吗？因为这里是only可以得到的error，所以不太需要这个valueerror
+        invalid = {"message": f"Cat id {id} is invalid."}
+        # return invalid # 不想要这个，因为我们想要返回的是400的错误。
+        abort(make_response(invalid, 400))
 
-#         # return invalid # 不想要这个，因为我们想要返回的是400的错误。
-#         abort(make_response(invalid, 400))
+    query = db.select(Cat).where(Cat.id == id)
+    cat = db.session.scalar(query)
 
-#     for cat in cats:
-#         if cat.id == id:
-#             return cat
-        
-#     not_found = {"message":  f"Cat with id ({id}) not fount"}
-#     abort(make_response(not_found, 404))
+    # for cat in cats:
+    #     if cat.id == id:
+    #         return cat
+    if not cat:
+        not_found = {"message":  f"Cat with id ({id}) not fount"}
+        abort(make_response(not_found, 404))
 
-
+    return cat
     
-# @cats_bp.get("/<name>")
-# def get_single_cat_by_name(name):
+# # @cats_bp.get("/<name>")
+# # def get_single_cat_by_name(name):
 
-#     for cat in cats:
-#         if cat.name == name:
-#             return dict(
-#             id = cat.id,
-#             name=cat.name,
-#             color=cat.color,
-#             personality=cat.personality
-#         )
+# #     for cat in cats:
+# #         if cat.name == name:
+# #             return dict(
+# #             id = cat.id,
+# #             name=cat.name,
+# #             color=cat.color,
+# #             personality=cat.personality
+# #         )
 
+
+
+@cats_bp.put("/<id>")
+def replace_cat(id):
+    cat = validate_cat(id)
+
+    request_body = request.get_json()
+    cat.name = request_body["name"]
+    cat.color = request_body["color"]
+    cat.personality = request_body["personality"]
+
+    db.session.commit()
+    
+    return Response(status=204, mimetype="application/json")
+
+
+@cats_bp.delete("/<id>")
+def delete_cat(id):
+    cat = validate_cat(id)
+
+    db.session.delete(cat)
+    db.session.commit()
+
+    return Response(status=204, mimetype="application/json")
