@@ -33,7 +33,18 @@ def create_cat():
 
 @cats_bp.get("")
 def get_all_cats():
-    query = db.select(Cat).order_by(Cat.id)
+    query = db.select(Cat)
+    name_param =request.args.get("name")
+    if name_param:
+        # find exact match for name
+        query = query.where(Cat.name == name_param)
+        
+    color_param = request.args.get("color")
+    if color_param:
+        query = query.where(Cat.color.ilike(f"%{color_param}%"))
+    
+    query = query.order_by(Cat.id)
+
     cats = db.session.scalars(query)
     result_list = []
     
@@ -46,6 +57,25 @@ def get_all_cats():
         ))
 
     return result_list
+
+
+#find out if a name query parameter was provided
+    # if name_param:
+    #     #explain query arg by arg: 
+    #     # query = db.select(Cat)  --> select all columns from Cat table
+    #     #.where(Cat.name == name_param) --> filter the results where the name column matches the name_param value
+    #     #.order_by(Cat.id) --> order the results by the id column
+    #     query = db.select(Cat).where(Cat.name == name_param).order_by(Cat.id)
+
+    # #if not, get all cats
+    # if color_param:
+    #     query = db.select(Cat).where(Cat.color.ilike(f"%{color_param}%")).order_by(Cat.id)
+    # else:
+    #     #build the query to get all cats ordered by their id
+    #     query = db.select(Cat).order_by(Cat.id)
+
+
+
 
 
 #/cats/1  /cats/potato
