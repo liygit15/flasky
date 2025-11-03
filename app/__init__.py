@@ -2,8 +2,8 @@ from flask import Flask
 from .db import db, migrate
 from .models.cat import Cat
 from .models.dog import Dog
-from .routes.cat_routes import cats_bp 
-from .routes.dog_routes import dogs_bp
+from .routes.cat_routes import bp as cats_bp
+from .routes.dog_routes import bp as dogs_bp
 import os
 
 def create_app(config = None):
