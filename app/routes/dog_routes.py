@@ -3,13 +3,14 @@ from ..models.dog import Dog
 from ..db import db
 
 
-dogs_bp = Blueprint("dog_bp", __name__, url_prefix= "/dogs")
+bp = Blueprint("dogs_bp", __name__, url_prefix= "/dogs")
 
 
-@dogs_bp.post("")
+@bp.post("")
 def create_dog():
     request_body = request.get_json()
     name = request_body["name"]
+
     color = request_body["color"]
     breed = request_body["breed"]
     personality = request_body["personality"]
@@ -35,7 +36,7 @@ def create_dog():
     return dog_response, 201
 
 
-@dogs_bp.get("")
+@bp.get("")
 def get_all_dogs():
     query = db.select(Dog)
     name_param =request.args.get("name")

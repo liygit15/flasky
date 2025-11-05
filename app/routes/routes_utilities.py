@@ -4,19 +4,38 @@ from ..db import db
 def validate_model(cls, id):
     try:
         id = int(id)
-    except ValueError: # 这里需要valueerror吗？因为这里是only可以得到的error，所以不太需要这个valueerror
-        invalid = {"message": f"{cls.__name__} id {id} is invalid."}
-        # return invalid # 不想要这个，因为我们想要返回的是400的错误。
+    except ValueError:
+        invalid = {"message": f"{cls.__name__} id ({id}) is invalid."}
         abort(make_response(invalid, 400))
 
     query = db.select(cls).where(cls.id == id)
     model = db.session.scalar(query)
-
-    # for cat in cats:
-    #     if cat.id == id:
-    #         return cat
-    if not model:
-        not_found = {"message":  f"{cls.__name__} with id ({id}) not fount"}
+    if not model:    
+        not_found = {"message": f"{cls.__name__} with id ({id}) not found."}
         abort(make_response(not_found, 404))
 
     return model
+
+def create_model(cls, model_data):
+    try:
+        new_model = cls.from_dict(model_data)
+    except KeyError as e:
+        response = {"message": f"Invalid request: missing {e.args[0]}"}
+        abort(make_response(response, 400))
+    
+    db.session.add(new_model)
+    db.session.commit()
+
+    return new_model.to_dict(), 201
+
+def get_models_with_filters(cls, filters=None):
+    query = db.select(cls)
+    
+    if filters:
+        for attribute, value in filters.items():
+            if hasattr(cls, attribute):
+                query = query.where(getattr(cls, attribute).ilike(f"%{value}%"))
+
+    models = db.session.scalars(query.order_by(cls.id))
+    models_response = [model.to_dict() for model in models]
+    return models_response
