@@ -27,14 +27,32 @@ class Cat(db.Model):
     caretaker_id:Mapped[Optional[int]]=mapped_column(ForeignKey("caretaker.id"))
     caretaker:Mapped[Optional["Caretaker"]]= relationship(back_populates="cats")
 
+    # def to_dict(self):
+    #     return {
+    #         "id":self.id,
+    #         "name":self.name,
+    #         "color":self.color,
+    #         "personality":self.personality,
+    #         "caretaker":self.caretaker.name if self.caretaker_id else None
+    #     }
+    
     def to_dict(self):
-        return {
-            "id":self.id,
-            "name":self.name,
-            "color":self.color,
-            "personality":self.personality,
-            "caretaker":self.caretaker.name if self.caretaker_id else None
+        result = {
+            "id": self.id, 
+            "name": self.name, 
+            "color": self.color,
+            "personality": self.personality,
         }
+
+        if self.caretaker_id:
+            result.update({
+                "caretaker_id": self.caretaker_id,
+                "caretaker": self.caretaker.name
+            })
+
+        return result
+
+
     @classmethod
     def from_dict(cls, cat_data):
         return cls(
